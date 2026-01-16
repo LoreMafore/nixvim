@@ -82,6 +82,21 @@ in
       html = {
         enable = true;
       };
+      bashls = {
+        enable = true;
+        config = {
+          cmd = [
+            "bash-language-server"
+            "start"
+          ];
+          filetypes = [
+            "zsh"
+            "sh"
+            "bash"
+            "ksh"
+          ];
+        };
+      };
       nixd = {
         enable = true;
         config = {
@@ -349,15 +364,6 @@ in
             ];
           };
         };
-      };
-      bashls = {
-        enable = true;
-        filetypes = [
-          "zsh"
-          "sh"
-          "bash"
-          "ksh"
-        ];
       };
       tailwindcss = {
         enable = true;
