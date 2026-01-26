@@ -39,7 +39,33 @@
             start_pos = link_end + 1
         end
 
-        -- Fall back to <cfile> if no markdown link found
+        -- Try orgmode links: [[path]], [[path][desc]], [[file:path::linenum]]
+        if not path then
+            start_pos = 1
+            while true do
+                -- Match [[...]] or [[...][...]]
+                local link_start, link_end, link_content = line:find('%[%[([^%]]+)%]%]', start_pos)
+                if not link_start then
+                    link_start, link_end, link_content = line:find('%[%[([^%]]+)%]%[[^%]]*%]%]', start_pos)
+                end
+                if not link_start then break end
+
+                if col >= link_start and col <= link_end then
+                    -- Remove "file:" prefix if present
+                    local org_path = link_content:gsub('^file:', "")
+                    -- Extract line number from ::linenum suffix
+                    if org_path:match('::(%d+)$') then
+                        line_num = tonumber(org_path:match('::(%d+)$'))
+                        org_path = org_path:gsub('::(%d+)$', "")
+                    end
+                    path = org_path
+                    break
+                end
+                start_pos = link_end + 1
+            end
+        end
+
+        -- Fall back to <cfile> if no markdown/orgmode link found
         if not path then
             path = vim.fn.expand(vim.fn.expand('<cfile>'))
         end
