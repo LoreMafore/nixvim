@@ -14,53 +14,66 @@
   extraConfigLua = ''
     require('window-picker').setup()
     function open_path_in_win()
-        local path = vim.fn.expand(vim.fn.expand('<cfile>'))
+        local path = nil
+        local line_num = nil
         local file_dir = vim.fn.expand('%:p:h')
-        
-        if vim.fn.filereadable(path) == 1 or vim.fn.filereadable(file_dir .. path) == 1 then
-            -- Check if a buffer for this file already exists
-            local existing_buf = vim.fn.bufnr(path)
-            local buf
 
-            if existing_buf == -1 then
-                existing_buf = vim.fn.bufnr(file_dir .. path)
-            end
-            
-            if existing_buf ~= -1 then
-                -- Buffer already exists, use it
-                buf = existing_buf
-            else
-                -- Create a new buffer for this file
-                buf = vim.api.nvim_create_buf(true, false)
-                vim.api.nvim_buf_set_name(buf, path)
-                
-                -- Switch to the buffer temporarily to load the file content
-                local current_buf = vim.api.nvim_get_current_buf()
-                vim.api.nvim_set_current_buf(buf)
-                vim.cmd('edit')
-                vim.api.nvim_set_current_buf(current_buf)
-            end
-            
-            -- Let the user pick a window and set the buffer there
-            local picked_win = require('window-picker').pick_window({
-                hint = 'floating-big-letter',
-                filter_rules = {
-                    -- when there is only one window available to pick from, use that window
-                    -- without prompting the user to select
-                    autoselect_one = false,
+        -- Try to extract markdown link under cursor: [text](path#Lnum)
+        local line = vim.fn.getline('.')
+        local col = vim.fn.col('.')
 
-                    -- whether you want to include the window you are currently on to window
-                    -- selection or not
-                    include_current_win = true
-                }
-            })
-            if picked_win then
-                vim.api.nvim_win_set_buf(picked_win, buf)
-            else
-                print("No window selected")
+        -- Find all markdown links in the line and check if cursor is within one
+        local start_pos = 1
+        while true do
+            local link_start, link_end, link_path, link_anchor = line:find('%[.-%]%(([^)#]+)#?([^)]*)%)', start_pos)
+            if not link_start then break end
+
+            if col >= link_start and col <= link_end then
+                path = link_path
+                -- Extract line number from anchor like "L95" or "L95-L100"
+                if link_anchor and link_anchor:match('^L(%d+)') then
+                    line_num = tonumber(link_anchor:match('^L(%d+)'))
+                end
+                break
             end
-        else
+            start_pos = link_end + 1
+        end
+
+        -- Fall back to <cfile> if no markdown link found
+        if not path then
+            path = vim.fn.expand(vim.fn.expand('<cfile>'))
+        end
+
+        -- Resolve relative paths
+        local full_path = path
+        if vim.fn.filereadable(path) == 0 then
+            full_path = file_dir .. '/' .. path
+        end
+
+        if vim.fn.filereadable(full_path) == 0 then
             print(path .. " is not a valid path")
+            return
+        end
+
+        -- Let the user pick a window
+        local picked_win = require('window-picker').pick_window({
+            hint = 'floating-big-letter',
+            filter_rules = {
+                autoselect_one = false,
+                include_current_win = true
+            }
+        })
+
+        if not picked_win then
+            print("No window selected")
+            return
+        end
+
+        -- Focus the picked window, open file, and jump to line
+        vim.api.nvim_set_current_win(picked_win)
+        vim.cmd('edit ' .. vim.fn.fnameescape(full_path))
+        if line_num then
+            vim.api.nvim_win_set_cursor(picked_win, {line_num, 0})
         end
     end
   '';
