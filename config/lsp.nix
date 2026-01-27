@@ -98,6 +98,7 @@ let
 
         mkdir -p $out/bin
         makeWrapper ${pkgs.nodejs}/bin/node $out/bin/ansible-language-server \
+          --prefix PATH : ${pkgs.python3}/bin \
           --add-flags "$out/lib/node_modules/ansible-language-server/out/server/src/server.js"
       '';
 
