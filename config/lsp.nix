@@ -5,42 +5,111 @@
 }:
 let
 
-  ansible-ls = pkgs.buildNpmPackage rec {
-    pname = "ansible-language-server";
-    version = "1.2.1";
+  ansible_ls =
+    let
+      pname = "ansible-language-server";
+      version = "26.1.3";
 
-    src = pkgs.fetchFromGitHub {
-      owner = "ansible";
-      repo = "ansible-language-server";
-      tag = "v${version}";
-      hash = "sha256-e6cOWoryOxWnl8q62rlGmSgwLVnoxLMwNFoGlUZw2bQ=";
+      src = pkgs.fetchFromGitHub {
+        owner = "ansible";
+        repo = "vscode-ansible";
+        tag = "v${version}";
+        hash = "sha256-DsEW3xP8Fa9nwPuyEFVqG6rvAZgr4TDB6jhyixdvqt8=";
+      };
+
+      # Fixed-output derivation to fetch yarn berry dependencies
+      offlineCache = pkgs.stdenvNoCC.mkDerivation {
+        name = "${pname}-${version}-yarn-cache";
+        inherit src;
+
+        nativeBuildInputs = [
+          pkgs.yarn-berry
+          pkgs.nodejs
+          pkgs.cacert
+        ];
+
+        outputHashMode = "recursive";
+        outputHashAlgo = "sha256";
+        outputHash = "sha256-NYbHhvlVoSL7lT1EdFkNJlmzRzQ0Gudo5pF0t6JtSic=";
+
+        buildPhase = ''
+          export HOME=$TMPDIR
+          export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+
+          yarn config set enableTelemetry false
+          yarn config set enableGlobalCache false
+          yarn config set cacheFolder .yarn/cache
+          yarn install --mode=skip-build
+
+          mkdir -p $out
+          cp -r .yarn/cache/* $out/
+          cp .yarnrc.yml $out/ || true
+        '';
+
+        dontInstall = true;
+      };
+
+    in
+    pkgs.stdenvNoCC.mkDerivation {
+      inherit pname version src;
+
+      nativeBuildInputs = with pkgs; [
+        yarn-berry
+        nodejs
+        makeWrapper
+      ];
+
+      buildPhase = ''
+        export HOME=$TMPDIR
+
+        # Set up yarn cache from our FOD
+        mkdir -p .yarn/cache
+        for f in ${offlineCache}/*; do
+          if [ "$(basename $f)" != ".yarnrc.yml" ]; then
+            cp -r "$f" .yarn/cache/
+          fi
+        done
+
+        yarn config set enableTelemetry false
+        yarn config set enableGlobalCache false
+        yarn config set cacheFolder .yarn/cache
+        yarn config set enableNetwork false
+
+        # Only install deps for ansible-language-server workspace
+        yarn workspaces focus @ansible/ansible-language-server
+
+        # Build ansible-language-server (exclude tests)
+        cd packages/ansible-language-server
+        rm -rf test
+        yarn run compile
+      '';
+
+      installPhase = ''
+        mkdir -p $out/lib/node_modules/ansible-language-server
+        cp -r out package.json $out/lib/node_modules/ansible-language-server/
+
+        # Copy node_modules (yarn berry installs them at workspace root)
+        # Use -L to dereference symlinks (yarn creates symlinks for workspace packages)
+        cd ../..
+        cp -rL node_modules $out/lib/node_modules/ansible-language-server/
+
+        mkdir -p $out/lib/node_modules/ansible-language-server/bin
+        cp packages/ansible-language-server/bin/ansible-language-server $out/lib/node_modules/ansible-language-server/bin/
+
+        mkdir -p $out/bin
+        makeWrapper ${pkgs.nodejs}/bin/node $out/bin/ansible-language-server \
+          --add-flags "$out/lib/node_modules/ansible-language-server/out/server/src/server.js"
+      '';
+
+      meta = with lib; {
+        changelog = "https://github.com/ansible/vscode-ansible/releases/tag/v${version}";
+        description = "Ansible Language Server";
+        mainProgram = "ansible-language-server";
+        homepage = "https://github.com/ansible/vscode-ansible";
+        license = licenses.mit;
+      };
     };
 
-    npmDepsHash = "sha256-Lzwj0/2fxa44DJBsgDPa43AbRxggqh881X/DFnlNLig=";
-    npmBuildScript = "compile";
-
-    # We remove/ignore the prepare and prepack scripts because they run the
-    # build script, and therefore are redundant.
-    #
-    # Additionally, the prepack script runs npm ci in addition to the
-    # build script. Directly before npm pack is run, we make npm unaware
-    # of the dependency cache, causing the npm ci invocation to fail,
-    # wiping out node_modules, which causes a mysterious error stating that tsc isn't installed.
-    postPatch = ''
-      sed -i '/"prepare"/d' package.json
-      sed -i '/"prepack"/d' package.json
-    '';
-
-    npmPackFlags = [ "--ignore-scripts" ];
-
-    meta = with lib; {
-      changelog = "https://github.com/ansible/ansible-language-server/releases/tag/v${version}";
-      description = "Ansible Language Server";
-      mainProgram = "ansible-language-server";
-      homepage = "https://github.com/ansible/ansible-language-server";
-      license = licenses.mit;
-    };
-  };
 in
 {
   extraConfigLuaPost = ''
@@ -79,6 +148,37 @@ in
       }
     ];
     servers = {
+      ansible = {
+        enable = true;
+        package = ansible_ls;
+        config = {
+          cmd = [
+            "ansible-language-server"
+            "--stdio"
+          ];
+          filetypes = [
+            "yaml.ansible"
+          ];
+          root_markers = [
+            ".git"
+            "inventory"
+            "ansible.cfg"
+          ];
+          settings = {
+            ansible = {
+              path = "ansible";
+              useFullyQualifiedCollectionNames = true;
+            };
+            executionEnvironment = {
+              enabled = false;
+            };
+            python = {
+              interpreterPath = "python";
+              envKind = "auto";
+            };
+          };
+        };
+      };
       html = {
         enable = true;
       };
@@ -331,16 +431,6 @@ in
     };
     luaConfig = {
       post = ''
-        -- the following is for when native completion is as good as cmp
-        -- vim.api.nvim_create_autocmd('LspAttach', {
-        --   callback = function(ev)
-        --     local client = vim.lsp.get_client_by_id(ev.data.client_id)
-        --     if client:supports_method('textDocument/completion') then
-        --       vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
-        --     end
-        --   end,
-        -- })
-
         vim.g.type_checking = true;
         function RESET_LSP()
             local cur_buf = vim.api.nvim_get_current_buf()
@@ -373,37 +463,6 @@ in
                 end
             end, 1000)
         end
-
-        -- Manual Ansible Language Server setup
-        local lspconfig = require('lspconfig')
-
-        -- Define the ansible language server manually
-        local configs = require('lspconfig.configs')
-        if not configs.ansiblels then
-          configs.ansiblels = {
-            default_config = {
-              cmd = { '${ansible-ls}/bin/ansible-language-server', '--stdio' },
-              filetypes = { 'yaml.ansible' },
-              root_dir = lspconfig.util.root_pattern('.git', 'ansible.cfg', 'inventory'),
-              settings = {
-                ansible = {
-                  path = "ansible",
-                  useFullyQualifiedCollectionNames = true,
-                },
-                executionEnvironment = {
-                  enabled = false,
-                },
-                python = {
-                  interpreterPath = "python",
-                  envKind = "auto",
-                },
-              },
-            },
-          }
-        end
-
-        -- Setup the server
-        lspconfig.ansiblels.setup({})
       '';
     };
   };
