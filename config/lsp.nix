@@ -430,6 +430,32 @@ in
         };
       };
     };
+    kotlin_language_server = {
+      enable = true;
+      config = {
+        cmd = [ "kotlin-language-server" ];
+        filetypes = [ "kotlin" ];
+        root_markers = [
+          "settings.gradle"
+          "settings.gradle.kts"
+          "build.gradle"
+          "build.gradle.kts"
+          "pom.xml"
+          ".git"
+        ];
+      };
+    };
+    svls = {
+      enable = true;
+      config = {
+        cmd = [ "svls" ];
+        filetypes = [ "verilog" "systemverilog" ];
+        root_markers = [
+          ".svls.toml"
+          ".git"
+        ];
+      };
+    };
     luaConfig = {
       post = ''
         vim.g.type_checking = true;

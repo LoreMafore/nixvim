@@ -1,5 +1,5 @@
 {
-  description = "David's Nixvim config";
+  description = "Conrad's Nixvim config";
 
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
@@ -44,6 +44,7 @@
                 nixfmt-rfc-style
                 ripgrep
                 xclip
+                verilator
               ];
             };
             # You can use `extraSpecialArgs` to pass additional arguments to your module files
