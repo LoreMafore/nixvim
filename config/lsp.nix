@@ -17,7 +17,6 @@ let
         hash = "sha256-DsEW3xP8Fa9nwPuyEFVqG6rvAZgr4TDB6jhyixdvqt8=";
       };
 
-      # Fixed-output derivation to fetch yarn berry dependencies
       offlineCache = pkgs.stdenvNoCC.mkDerivation {
         name = "${pname}-${version}-yarn-cache";
         inherit src;
@@ -62,7 +61,6 @@ let
       buildPhase = ''
         export HOME=$TMPDIR
 
-        # Set up yarn cache from our FOD
         mkdir -p .yarn/cache
         for f in ${offlineCache}/*; do
           if [ "$(basename $f)" != ".yarnrc.yml" ]; then
@@ -75,10 +73,8 @@ let
         yarn config set cacheFolder .yarn/cache
         yarn config set enableNetwork false
 
-        # Only install deps for ansible-language-server workspace
         yarn workspaces focus @ansible/ansible-language-server
 
-        # Build ansible-language-server (exclude tests)
         cd packages/ansible-language-server
         rm -rf test
         yarn run compile
@@ -88,8 +84,6 @@ let
         mkdir -p $out/lib/node_modules/ansible-language-server
         cp -r out package.json $out/lib/node_modules/ansible-language-server/
 
-        # Copy node_modules (yarn berry installs them at workspace root)
-        # Use -L to dereference symlinks (yarn creates symlinks for workspace packages)
         cd ../..
         cp -rL node_modules $out/lib/node_modules/ansible-language-server/
 
@@ -118,10 +112,10 @@ in
     vim.diagnostic.config({
         signs = {
             text = {
-                [severity.ERROR] = " ",
-                [severity.WARN] = " ",
-                [severity.INFO] = " ",
-                [severity.HINT] = " ",
+                [severity.ERROR] = " ",
+                [severity.WARN] = " ",
+                [severity.INFO] = " ",
+                [severity.HINT] = " ",
             },
         },
     })
@@ -129,19 +123,16 @@ in
   lsp = {
     inlayHints.enable = false;
     keymaps = [
-      # General LSP Actions
       {
         key = "grh";
         lspBufAction = "hover";
         mode = "n";
       }
-      # Diagnostics
       {
         key = "<leader>lde";
         action = "<CMD>lua vim.diagnostic.open_float()<Enter>";
         mode = "n";
       }
-      # Python server specific
       {
         mode = "n";
         key = "<leader>lx";
@@ -157,9 +148,7 @@ in
             "ansible-language-server"
             "--stdio"
           ];
-          filetypes = [
-            "yaml.ansible"
-          ];
+          filetypes = [ "yaml.ansible" ];
           root_markers = [
             ".git"
             "inventory"
@@ -170,9 +159,7 @@ in
               path = "ansible";
               useFullyQualifiedCollectionNames = true;
             };
-            executionEnvironment = {
-              enabled = false;
-            };
+            executionEnvironment.enabled = false;
             python = {
               interpreterPath = "python";
               envKind = "auto";
@@ -180,22 +167,12 @@ in
           };
         };
       };
-      html = {
-        enable = true;
-      };
+      html.enable = true;
       bashls = {
         enable = true;
         config = {
-          cmd = [
-            "bash-language-server"
-            "start"
-          ];
-          filetypes = [
-            "zsh"
-            "sh"
-            "bash"
-            "ksh"
-          ];
+          cmd = [ "bash-language-server" "start" ];
+          filetypes = [ "zsh" "sh" "bash" "ksh" ];
         };
       };
       nixd = {
@@ -209,7 +186,6 @@ in
                 nixvim = {
                   expr = "(builtins.getFlake \"github:nix-community/nixvim\").legacyPackages.\${builtins.currentSystem}.nixvimConfiguration.options";
                 };
-                # WARN: these options expressions for completions only work as long as my upstream flake is structured as it currently is
                 nixos = {
                   expr = ''(builtins.getFlake "github:dtvillafana/dotfiles-nix").outputs.nixosConfigurations.thinkpad.options'';
                 };
@@ -227,22 +203,12 @@ in
           pname = "django_template_lsp";
           version = "1.2.2";
           format = "pyproject";
-
           src = pkgs.python3Packages.fetchPypi {
             inherit pname version;
             hash = "sha256-FdzLsz3H70y4ThZzvwWD1UUrspuMskZWO4xbpOFBXIM=";
           };
-
-          nativeBuildInputs = with pkgs.python3Packages; [
-            setuptools
-          ];
-
-          propagatedBuildInputs = with pkgs.python3Packages; [
-            pygls
-            lsprotocol
-            jedi
-          ];
-
+          nativeBuildInputs = with pkgs.python3Packages; [ setuptools ];
+          propagatedBuildInputs = with pkgs.python3Packages; [ pygls lsprotocol jedi ];
           meta = with lib; {
             description = "Language server for Django templates";
             homepage = "https://github.com/fourdigits/djlsp";
@@ -250,9 +216,7 @@ in
           };
         };
         config = {
-          cmd = [
-            "djlsp"
-          ];
+          cmd = [ "djlsp" ];
           filetypes = [ "htmldjango" ];
         };
       };
@@ -261,74 +225,28 @@ in
         config = {
           cmd = [ "htmx-lsp" ];
           filetypes = [
-            "aspnetcorerazor"
-            "astro"
-            "astro-markdown"
-            "blade"
-            "clojure"
-            "django-html"
-            "edge"
-            "eelixir"
-            "ejs"
-            "elixir"
-            "erb"
-            "eruby"
-            "gohtml"
-            "gohtmltmpl"
-            "haml"
-            "handlebars"
-            "hbs"
-            "heex"
-            "html"
-            "html-eex"
-            "htmlangular"
-            "htmldjango"
-            "jade"
-            "javascript"
-            "javascriptreact"
-            "leaf"
-            "liquid"
-            "markdown"
-            "mdx"
-            "mustache"
-            "njk"
-            "nunjucks"
-            "php"
-            "razor"
-            "reason"
-            "rescript"
-            "slim"
-            "svelte"
-            "templ"
-            "twig"
-            "typescript"
-            "typescriptreact"
-            "vue"
+            "aspnetcorerazor" "astro" "astro-markdown" "blade" "clojure"
+            "django-html" "edge" "eelixir" "ejs" "elixir" "erb" "eruby"
+            "gohtml" "gohtmltmpl" "haml" "handlebars" "hbs" "heex" "html"
+            "html-eex" "htmlangular" "htmldjango" "jade" "javascript"
+            "javascriptreact" "leaf" "liquid" "markdown" "mdx" "mustache"
+            "njk" "nunjucks" "php" "razor" "reason" "rescript" "slim"
+            "svelte" "templ" "twig" "typescript" "typescriptreact" "vue"
           ];
         };
       };
       ty = {
         enable = true;
         config = {
-          cmd = [
-            "ty"
-            "server"
-          ];
-          filetypes = [
-            "python"
-          ];
+          cmd = [ "ty" "server" ];
+          filetypes = [ "python" ];
         };
       };
       jsonls = {
         enable = true;
         config = {
-          cmd = [
-            "vscode-json-language-server"
-            "--stdio"
-          ];
-          filetypes = [
-            "json"
-          ];
+          cmd = [ "vscode-json-language-server" "--stdio" ];
+          filetypes = [ "json" ];
         };
       };
       lemminx = {
@@ -341,22 +259,14 @@ in
       ts_ls = {
         enable = true;
         config = {
-          cmd = [
-            "typescript-language-server"
-            "--stdio"
-          ];
+          cmd = [ "typescript-language-server" "--stdio" ];
           root_dir = lib.nixvim.mkRaw ''
             function(bufnr, on_dir)
-                -- The project root is where the LSP can be started from
-                -- As stated in the documentation above, this LSP supports monorepos and simple projects.
-                -- We select then from the project root, which is identified by the presence of a package
-                -- manager lock file.
                 local root_markers = { 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'bun.lock', '.git' }
                 local project_root = vim.fs.root(bufnr, root_markers)
                 if not project_root then
                   return
                 end
-
                 on_dir(project_root)
             end
           '';
@@ -367,54 +277,14 @@ in
         config = {
           cmd = [ "tailwindcss-language-server" ];
           filetypes = [
-            "aspnetcorerazor"
-            "astro"
-            "astro-markdown"
-            "blade"
-            "clojure"
-            "django-html"
-            "htmldjango"
-            "edge"
-            "eelixir"
-            "elixir"
-            "ejs"
-            "erb"
-            "eruby"
-            "gohtml"
-            "gohtmltmpl"
-            "haml"
-            "handlebars"
-            "hbs"
-            "htmlangular"
-            "html-eex"
-            "heex"
-            "jade"
-            "leaf"
-            "liquid"
-            "mdx"
-            "mustache"
-            "njk"
-            "nunjucks"
-            "php"
-            "razor"
-            "slim"
-            "twig"
-            "css"
-            "less"
-            "postcss"
-            "sass"
-            "scss"
-            "stylus"
-            "sugarss"
-            "javascript"
-            "javascriptreact"
-            "reason"
-            "rescript"
-            "typescript"
-            "typescriptreact"
-            "vue"
-            "svelte"
-            "templ"
+            "aspnetcorerazor" "astro" "astro-markdown" "blade" "clojure"
+            "django-html" "htmldjango" "edge" "eelixir" "elixir" "ejs"
+            "erb" "eruby" "gohtml" "gohtmltmpl" "haml" "handlebars" "hbs"
+            "htmlangular" "html-eex" "heex" "jade" "leaf" "liquid" "mdx"
+            "mustache" "njk" "nunjucks" "php" "razor" "slim" "twig" "css"
+            "less" "postcss" "sass" "scss" "stylus" "sugarss" "javascript"
+            "javascriptreact" "reason" "rescript" "typescript"
+            "typescriptreact" "vue" "svelte" "templ"
           ];
         };
       };
@@ -422,38 +292,31 @@ in
         enable = true;
         config = {
           telemetry.enable = false;
-          diagnostics = {
-            globals = [
-              "vim"
-            ];
-          };
+          diagnostics.globals = [ "vim" ];
         };
       };
-    };
-    kotlin_language_server = {
-      enable = true;
-      config = {
-        cmd = [ "kotlin-language-server" ];
-        filetypes = [ "kotlin" ];
-        root_markers = [
-          "settings.gradle"
-          "settings.gradle.kts"
-          "build.gradle"
-          "build.gradle.kts"
-          "pom.xml"
-          ".git"
-        ];
+      kotlin_language_server = {        # <-- moved inside servers
+        enable = true;
+        config = {
+          cmd = [ "kotlin-language-server" ];
+          filetypes = [ "kotlin" ];
+          root_markers = [
+            "settings.gradle"
+            "settings.gradle.kts"
+            "build.gradle"
+            "build.gradle.kts"
+            "pom.xml"
+            ".git"
+          ];
+        };
       };
-    };
-    svls = {
-      enable = true;
-      config = {
-        cmd = [ "svls" ];
-        filetypes = [ "verilog" "systemverilog" ];
-        root_markers = [
-          ".svls.toml"
-          ".git"
-        ];
+      svls = {                          # <-- moved inside servers
+        enable = true;
+        config = {
+          cmd = [ "svls" ];
+          filetypes = [ "verilog" "systemverilog" ];
+          root_markers = [ ".svls.toml" ".git" ];
+        };
       };
     };
     luaConfig = {
@@ -463,7 +326,6 @@ in
             local cur_buf = vim.api.nvim_get_current_buf()
             local clients = vim.lsp.get_clients({bufnr = cur_buf})
 
-            -- Collect client names before stopping them
             local client_names = {}
             for _, client in ipairs(clients) do
                 table.insert(client_names, client.name)
@@ -476,12 +338,8 @@ in
             vim.api.nvim_exec2(command, { output = false })
             vim.api.nvim_exec2('DirenvExport', { output = false })
 
-            -- Wait 500ms then reattach LSP
             vim.defer_fn(function()
-                -- Force LSP to reattach by editing the buffer
                 vim.cmd('edit!')
-
-                -- Notify user which LSP servers were restarted
                 if #client_names > 0 then
                     local message = "Restarted LSP servers: " .. table.concat(client_names, ", ")
                     vim.notify(message, vim.log.levels.INFO)
@@ -500,11 +358,7 @@ in
         enable = true;
         settings = {
           telemetry.enable = false;
-          diagnostics = {
-            globals = [
-              "vim"
-            ];
-          };
+          diagnostics.globals = [ "vim" ];
         };
       };
       rust_analyzer = {
@@ -526,9 +380,7 @@ in
     };
     direnv = {
       enable = true;
-      settings = {
-        direnv_silent_reload = 0;
-      };
+      settings.direnv_silent_reload = 0;
     };
   };
   filetype = {
