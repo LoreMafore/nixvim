@@ -11,6 +11,7 @@
     ./completion.nix
     ./csvview.nix
     ./custom-lua.nix
+    ./dap.nix
     ./dadbod.nix
     ./dial.nix
     ./dressing.nix

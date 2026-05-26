@@ -1,5 +1,5 @@
 {
-  description = "David's Nixvim config";
+  description = "Conrad Mercer's Nixvim config";
 
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*";
