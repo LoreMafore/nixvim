@@ -61,6 +61,7 @@ in
   extraPackages = with pkgs; [
     cargo
     rustc
+    rust-analyzer
   ];
   extraConfigLuaPost = ''
     local severity = vim.diagnostic.severity
@@ -87,7 +88,7 @@ in
     })
   '';
   lsp = {
-    inlayHints.enable = false;
+    inlayHints.enable = true;
     keymaps = [
       # General LSP Actions
       {
@@ -373,9 +374,6 @@ in
           };
         };
       };
-      rust_analyzer = {
-        enable = true;
-      };
     };
     luaConfig = {
       post = ''
@@ -433,6 +431,21 @@ in
 
   plugins = {
     lspconfig.enable = true;
+    rustaceanvim = {
+      enable = true;
+      settings = {
+        server = {
+          settings = {
+            "rust-analyzer" = {
+              files.watcher = "client";
+              checkOnSave = true;
+              check.command = "clippy";
+              diagnostics.experimental.enable = false;
+            };
+          };
+        };
+      };
+    };
     telescope.keymaps = {
       "<leader>lf" = "lsp_references";
       "<leader>lg" = "lsp_definitions";
