@@ -27,13 +27,13 @@
         return str
     end
     local env_vars = {
-        {
-            key = 'politics',
-            env_var = 'HOME',
-            value_func = function(var)
-                return 'sqlite://' .. var .. '/Sync/datasets/politics.db'
-            end,
-        },
+        -- {
+        --     key = 'politics',
+        --     env_var = 'HOME',
+        --     value_func = function(var)
+        --         return 'sqlite://' .. var .. '/Sync/datasets/politics.db'
+        --     end,
+        -- }
     }
 
     for _, item in ipairs(env_vars) do
