@@ -27,21 +27,23 @@
         return str
     end
     local env_vars = {
-        {
-            env_var = os.getenv('HOME'),
-            key = 'politics',
-            value_func = function(var)
-                return 'sqlite://' .. var .. '/Sync/datasets/politics.db'
-            end,
-
-        },
+        -- {
+        --     key = 'politics',
+        --     env_var = 'HOME',
+        --     value_func = function(var)
+        --         return 'sqlite://' .. var .. '/Sync/datasets/politics.db'
+        --     end,
+        -- }
     }
 
     for _, item in ipairs(env_vars) do
         if item.env_var ~= nil then
-            dbs = vim.tbl_deep_extend('force', dbs, {
-                [item.key] = item.value_func(item.env_var),
-            })
+            local val = os.getenv(item.env_var)
+            if val then
+                dbs[item.key] = item.value_func(val)
+            end
+        else
+            dbs[item.key] = item.value_func()
         end
     end
     vim.g.dbs = dbs

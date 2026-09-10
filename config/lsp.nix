@@ -58,6 +58,11 @@ in
   globals = {
     direnv_silent_load = 1;
   };
+  extraPackages = with pkgs; [
+    cargo
+    rustc
+    rust-analyzer
+  ];
   extraConfigLuaPost = ''
     local severity = vim.diagnostic.severity
     vim.diagnostic.config({
@@ -70,9 +75,20 @@ in
             },
         },
     })
+    local rust_hl_ns = vim.api.nvim_create_namespace("rust_hl")
+    vim.api.nvim_set_hl(rust_hl_ns, "DiagnosticUnnecessary", {})
+    vim.api.nvim_create_autocmd("BufEnter", {
+        callback = function()
+            if vim.bo.filetype == "rust" then
+                vim.api.nvim_win_set_hl_ns(0, rust_hl_ns)
+            else
+                vim.api.nvim_win_set_hl_ns(0, 0)
+            end
+        end,
+    })
   '';
   lsp = {
-    inlayHints.enable = false;
+    inlayHints.enable = true;
     keymaps = [
       # General LSP Actions
       {
@@ -410,16 +426,26 @@ in
           };
         };
       };
-      rust_analyzer = {
-        enable = true;
-        installCargo = true;
-        installRustc = true;
-      };
     };
   };
 
   plugins = {
     lspconfig.enable = true;
+    rustaceanvim = {
+      enable = true;
+      settings = {
+        server = {
+          settings = {
+            "rust-analyzer" = {
+              files.watcher = "client";
+              checkOnSave = true;
+              check.command = "clippy";
+              diagnostics.experimental.enable = false;
+            };
+          };
+        };
+      };
+    };
     telescope.keymaps = {
       "<leader>lf" = "lsp_references";
       "<leader>lg" = "lsp_definitions";

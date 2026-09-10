@@ -1,6 +1,7 @@
 {
   # Import all your configuration modules here
   imports = [
+    ./aerial.nix
     ./ai.nix
     ./autopairs.nix
     ./bufdelete.nix
@@ -10,6 +11,7 @@
     ./completion.nix
     ./csvview.nix
     ./custom-lua.nix
+    ./dap.nix
     ./dadbod.nix
     ./dial.nix
     ./dressing.nix
