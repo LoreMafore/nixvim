@@ -265,8 +265,8 @@ else
         src = pkgs.fetchFromGitHub {
           owner = "hamidi-dev";
           repo = "org-super-agenda.nvim";
-          rev = "main";
-          hash = "sha256-4O7wyPoYFtGLi/TYy9U6kildyr+RCpUsqb0vr4Aovw4=";
+          rev = "a76b1ca965c019f74786a94be6c142fbb84b7719";
+          hash = "sha256-dBKG6TQ9Fd/jZGk0j4DQEHoF29VjpUT0gpAIDDJ/E8k=";
         };
         doCheck = false;
       })
@@ -275,8 +275,8 @@ else
         src = pkgs.fetchFromGitHub {
           owner = "nvim-orgmode";
           repo = "telescope-orgmode.nvim";
-          rev = "master";
-          hash = "sha256-LXz6+9F9PAp2qNtRywxtdQSxO/lMcUHjwS4SASRTSVQ=";
+          rev = "214fe56e105bb3d0638f33320ed959911a1bfcb1";
+          hash = "sha256-6Eb0dabJ7W+bxypSgmgLVEhkRnXx4Y2RAaFxcC4CBbc=";
         };
         doCheck = false;
       })

@@ -6,8 +6,6 @@ in
   plugins.dap = {
     enable = true;
 
-    extensions.dap-ui.enable = true;
-
     adapters.servers.codelldb = {
       port = "\${port}";
       executable = {
@@ -34,6 +32,8 @@ in
       }
     ];
   };
+
+  plugins.dap-ui.enable = true;
 
   extraConfigLua = ''
     local dap, dapui = require('dap'), require('dapui')

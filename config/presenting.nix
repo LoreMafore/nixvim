@@ -6,8 +6,8 @@
       src = pkgs.fetchFromGitHub {
         owner = "sotte";
         repo = "presenting.nvim";
-        rev = "master";
-        hash = "sha256-Q/SNFkMSREVEeDiikdMXQCVxrt3iThQUh08YMcN9qSk=";
+        rev = "aa32b58b86fb1467922396f058cd69b1dc85b6e6";
+        hash = "sha256-nAOKUW01KyC5kCP86s0KUsNPfb9wWngDNH3KWvKBwo8=";
       };
     })
   ];
