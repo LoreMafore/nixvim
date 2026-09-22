@@ -30,7 +30,7 @@
             overlays = [
               (final: prev: {
                 claude-code = inputs.llm-agents.packages.${system}.claude-code;
-                opencode = inputs.llm-agents.packages.${system}.opencode;
+                opencode2 = inputs.llm-agents.packages.${system}.opencode2;
               })
             ];
           };
@@ -52,6 +52,7 @@
                 lazygit
                 nix-direnv
                 nixfmt-tree
+                opencode2
                 ripgrep
                 xclip
               ];
