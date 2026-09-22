@@ -91,7 +91,7 @@ in
         "n"
         "t"
       ];
-      key = "<leader>.";
+      key = "<leader>a.";
       action.__raw = "function() _G.__opencode_ai.terminal(99 + vim.v.count):toggle() end";
       options.desc = "Toggle opencode (count = extra instance)";
     }
