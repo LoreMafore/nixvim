@@ -67,7 +67,7 @@
         "n"
         "t"
       ];
-      key = "<leader>.";
+      key = "<leader>a.";
       action.__raw = ''function() require("opencode").toggle() end'';
       options.desc = "Toggle opencode";
     }

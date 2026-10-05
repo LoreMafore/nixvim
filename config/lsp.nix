@@ -133,6 +133,16 @@ in
       html = {
         enable = true;
       };
+      omnisharp = {
+        enable = true;
+        config.settings = {
+          MsBuild.LoadProjectsOnDemand = true;
+          RoslynExtensionsOptions = {
+            EnableDecompilationSupport = true;
+            EnableImportCompletion = true;
+          };
+        };
+      };
       bashls = {
         enable = true;
         config = {
