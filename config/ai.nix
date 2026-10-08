@@ -1,4 +1,7 @@
 { lib, pkgs, ... }:
+let
+  opencode2 = lib.getExe pkgs.opencode2;
+in
 {
   plugins = {
     claude-code = {
@@ -20,28 +23,49 @@
     };
     opencode = {
       enable = true;
-      settings = {
-        server = {
-          start = lib.nixvim.mkRaw ''
-            function()
-              require("opencode.terminal").open("${lib.getExe pkgs.opencode} --port 4096 --hostname 0.0.0.0", {
-                split = "below",
-                height = math.floor(vim.o.lines * 0.3),
-              })
-            end
-          '';
-          toggle = lib.nixvim.mkRaw ''
-            function()
-              require("opencode.terminal").toggle("${lib.getExe pkgs.opencode} --port 4096 --hostname 0.0.0.0", {
-                split = "below",
-                height = math.floor(vim.o.lines * 0.3),
-              })
-            end
-          '';
+      package = pkgs.vimUtils.buildVimPlugin {
+        name = "opencode.nvim";
+        src = pkgs.fetchFromGitHub {
+          owner = "dtvillafana";
+          repo = "opencode.nvim";
+          rev = "9cb15b1dad29d9769ff1dcd44b0194e82aeb5170";
+          hash = "sha256-Kdn/Qk0y3Grtz2xq/o5EQkYgoSIh5Kv+pIuqp/tiOtY=";
         };
       };
+      settings.server.start = lib.nixvim.mkRaw "function() _G.__opencode_ai.ensure_service() end";
     };
   };
+
+  extraConfigLua = ''
+    _G.__opencode_ai = {
+      ensure_service = function()
+        vim.system({ "${opencode2}", "api", "get", "/api/server" }, { text = true })
+      end,
+      terminal = function(id)
+        id = id or 99
+        local key = "_term_" .. id
+        local term = _G.__opencode_ai[key]
+        if term and (not term.bufnr or vim.api.nvim_buf_is_valid(term.bufnr)) then
+          return term
+        end
+
+        local registered = require("toggleterm.terminal").get(id, true)
+        if registered then
+          _G.__opencode_ai[key] = registered
+          return registered
+        end
+
+        _G.__opencode_ai[key] = require("toggleterm.terminal").Terminal:new({
+          cmd = "${opencode2}",
+          hidden = true,
+          direction = "horizontal",
+          display_name = "opencode " .. id,
+          id = id,
+        })
+        return _G.__opencode_ai[key]
+      end,
+    }
+  '';
 
   keymaps = [
     {
@@ -67,9 +91,9 @@
         "n"
         "t"
       ];
-      key = "<leader>.";
-      action.__raw = ''function() require("opencode").toggle() end'';
-      options.desc = "Toggle opencode";
+      key = "<leader>a.";
+      action.__raw = "function() _G.__opencode_ai.terminal(99 + vim.v.count):toggle() end";
+      options.desc = "Toggle opencode (count = extra instance)";
     }
     {
       mode = [
